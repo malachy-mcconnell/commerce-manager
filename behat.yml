@@ -2,7 +2,6 @@ default:
   suites:
     default:
       contexts:
-        - FeatureContext
         - Drupal\DrupalExtension\Context\DrupalContext
         - Drupal\DrupalExtension\Context\MinkContext
         - Drupal\DrupalExtension\Context\MessageContext
@@ -14,3 +13,42 @@ default:
       base_url: http://localhost
     Drupal\DrupalExtension:
       blackbox: ~
+
+acm:
+  autoload:
+    '': %paths.base%/features/bootstrap
+  suites:
+    default:
+      paths:
+          - %paths.base%/features
+      contexts:
+        - FeatureContext:
+            parameters:
+              simpleurl: '/stronglax'
+              simpletitle: 'Stronglax'
+              simpletitlear: 'Mothercare Three Position Baby Carrier test - Black'
+              configurl: '/horse-photographic-t-shirt'
+              configtitle: 'Horse Photographic T-Shirt'
+              configtitlear: 'Horse Photographic تي- شيرت'
+              configvariant: '18-24 Months'
+        - Drupal\DrupalExtension\Context\MinkContext
+        - Drupal\DrupalExtension\Context\DrupalContext
+        - Drupal\DrupalExtension\Context\MessageContext
+    notinstalled:
+      paths:
+          - %paths.base%/features/not_installed
+      contexts:
+        - FeatureContext:
+            parameters:
+              baseurl: 'http://localhost/'
+              simpleurl: '/'
+              simpletitle: ''
+              simpletitlear: ''
+              configurl: '/'
+              configtitle: ''
+              configtitlear: ''
+              configvariant: ''
+  extensions:
+    Behat\MinkExtension:
+      base_url: 'http://localhost'
+      files_path: "%paths.base%/images"

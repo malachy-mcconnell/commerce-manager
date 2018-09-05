@@ -29,6 +29,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
 
   private $item_count;
 
+  private $base_url;
   private $simple_url;
 
   private $config_url;
@@ -51,6 +52,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    */
   public function __construct($parameters) {
 
+    $this->base_url = $parameters['baseurl'];
     $this->simple_url = $parameters['simpleurl'];
     $this->simple_title = $parameters['simpletitle'];
     $this->simple_title_ar = $parameters['simpletitlear'];
@@ -79,6 +81,109 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
       }
     }
   }
+
+  /**
+   * @When /^I do not follow redirects$/
+   */
+  public function iDoNotFollowRedirects() {
+    $this->getSession()->getDriver()->getClient()->followRedirects(false);
+  }
+  /**
+   * @Then /^I (?:am|should be) redirected to "([^"]*)"$/
+   */
+  public function iAmRedirectedTo($actualPath) {
+    $session = $this->getSession();
+    $headers = $session->getResponseHeaders();
+    $wouldRedirect = isset($headers['Location'][0]);
+    if(!$wouldRedirect)
+    {
+      throw new \Exception("Would not redirect from ".$actualPath);
+    }
+
+    // Consider inspecting
+    //$session->getStatusCode();
+
+    $redirectComponents = parse_url($headers['Location'][0]);
+    $willRedirectCorrectly = ($redirectComponents['path'] == $actualPath);
+    if(!$willRedirectCorrectly)
+    {
+      throw new \Exception("Would redirect to wrong location ".$redirectComponents['path']." instead of ".$actualPath);
+    }
+
+    // Keep going. Follow the redirect now:
+    $session->visit($redirectComponents['path']);
+
+  }
+
+  /**
+   * @When I go to :arg1
+   */
+  public function iGoTo($arg1)
+  {
+    $this->visitPath($arg1);
+    //consider
+    //$this->iWaitForThePageToLoad2();
+  }
+
+  /**
+   * @Given /^I am on a any page$/
+   */
+  public function iAmOnAnyPage()
+  {
+    $this->visitPath($this->base_url);
+  }
+
+  /**
+   * @Given I am on any page
+   */
+  public function iAmOnAnyPage2()
+  {
+    $this->visitPath($this->base_url);
+  }
+
+
+
+  /**
+   * @When I am on :arg1
+   */
+  public function iAmOn($arg1)
+  {
+    $on = $this->getSession()->getCurrentUrl();
+    if($on != $arg1)
+    {
+      throw new \Exception("Failed to reach redirect (on ".$on.")");
+    }
+  }
+
+
+
+
+  /**
+   * Too generic? Could write specifics (See examples below)
+   *
+   * @When I should see :arg1
+   */
+  public function iShouldSee($arg1)
+  {
+    $page = $this->getSession()->getPage();
+    $canSee = $page->hasContent($arg1);
+    if(!$canSee) {
+      throw new \Exception('Cannot see '.$arg1);
+    }
+  }
+
+  /**
+   * @Then the url should match :arg1
+   */
+  public function theUrlShouldMatch($arg1)
+  {
+    $specimenUrl = $this->base_url.$arg1;
+    $urlMatches = ($specimenUrl == $this->getSession()->getCurrentUrl());
+    if (!$urlMatches){
+      throw new \Exception('Specimen URL '.$specimenUrl." does not match actual ".$this->getSession()->getCurrentUrl());
+    }
+  }
+
 
   /**
    * @Given /^I am on a simple product page$/
@@ -196,6 +301,22 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
         ->getCurrentUrl()));
     }
 
+  }
+
+  /**
+   * @Given I wait for the page to load
+   */
+  public function iWaitForThePageToLoad3()
+  {
+    $this->getSession()->wait(180000, '(0 === jQuery.active)');
+  }
+
+  /**
+   * @And /^I wait for the page to load$/
+   */
+  public function iWaitForThePageToLoad2()
+  {
+    $this->getSession()->wait(180000, '(0 === jQuery.active)');
   }
 
   /**
